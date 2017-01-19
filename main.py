@@ -3,55 +3,34 @@
 import signal
 import sys
 import os
+import configparser
 
 import gi
 gi.require_version('Gtk', '3.0')
 gi.require_version('Gdk', '3.0')
 gi.require_version('GdkPixbuf', '2.0')
 from gi.repository import Gio, GObject, Gtk
+from handler import Handler
 
-DESKTOP_FILES_PATH = os.path.expanduser('~') + '/.local/share/applications/'
-
-
-def create_file(base_path, name, application_type):
+def create_file(base_path, name, 
+        application_type, version, icon, exec_app):
     path = base_path + name + '.desktop'
     with open(path, 'w') as f:
         f.write('[Desktop Entry]\n')
         f.write('Name={}\n'.format(name))
         f.write('Type={}\n'.format(application_type))
-
-
-class Handler:
-
-    def __init__(self, application):
-        self.application = application
-
-    def on_form_submit(self, name_entry, application_type):
-        import pdb; pdb.set_trace()
-        # Check if name is empty
-        name = name_entry.get_text()
-        if not name:
-            print('no name')
-            return
-        # File creation
-        create_file(
-            base_path=DESKTOP_FILES_PATH,
-            name=name,
-            application_type='test'
-        )
-        # Shutdown application
-        self.application.quit()
-
-    def on_form_cancel(self, button):
-        print('Bye !')
-        self.application.quit()
+        if version:
+            f.write('Version={}\n'.format(version))
+        if icon:
+            f.write('Icon={}\n'.format(icon))
+        if exec_app:
+            f.write('Exec={}\n'.format(exec_app))
 
 
 class DesktopEntryApp(Gtk.Application):
 
     def __init__(self, **kwargs):
         super().__init__(application_id="github.io.desktop-entry", **kwargs)
-        self.window = None
 
     def do_startup(self):
         Gtk.Application.do_startup(self)
@@ -62,22 +41,32 @@ class DesktopEntryApp(Gtk.Application):
         self.add_action(action_quit)
 
     def do_activate(self):
-        if not self.window:
+        active_window = self.get_active_window()
+        if not active_window:
             # Get the window from glade
             builder = Gtk.Builder()
             builder.add_from_file("entry.glade")
             # Connect to signals
             builder.connect_signals(Handler(self))
-            main_window = builder.get_object('main_window')
-            main_window.show_all()
-
-            # Signals
-            #name_entry = builder.get
-
+            #main_window = builder.get_object('main_window')
+            #main_window.show_all()
+            home_window = builder.get_object('home_window')
+            home_window.show_all()
             # Add window to the app
-            self.add_window(main_window)
-            self.window = main_window
-        self.window.present()
+            #self.add_window(main_window)
+            #self.window = main_window
+            self.add_window(home_window)
+            self.window = home_window
+            self.builder = builder
+        else:
+            active_window.present()
+    
+    def activate_create_window(self, filename=None):
+        active_window = self.get_active_window()
+        active_window.destroy()
+        main_window = self.builder.get_object('main_window')
+        main_window.show_all()
+        self.add_window(main_window)
 
     def on_quit(self, action, extra):
         self.quit()
