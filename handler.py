@@ -26,6 +26,20 @@ class Handler:
     def _get_field(self, field_name):
         return self.application.builder.get_object(field_name)
 
+
+    def _init_boolean_field(self, desktop_entry, key, widget_name):
+        value = desktop_entry.get(key)
+        if value:
+            widget = self.application.builder.get_object(widget_name)
+            widget.set_active(True)
+
+    def _init_text_field(self, desktop_entry, key, widget_name):
+        value = desktop_entry.get(key)
+        if value:
+            widget = self.application.builder.get_object(widget_name)
+            widget.set_text(value)
+
+
     def init_fields_from_file(self, filename):
         # Config file parser
         config = configparser.ConfigParser()
@@ -35,10 +49,28 @@ class Handler:
         desktop_entry = config['Desktop Entry']
         if not desktop_entry:
             return
-        name = desktop_entry.get('Name')
-        if name:
-            name_entry = self.application.builder.get_object('entry_name')
-            name_entry.set_text(name)
+
+        #exec_app = desktop_entry.get('Exec')
+        exec_app = None
+        if exec_app:
+            exec_app_entry = self.application.builder.get_object('entry_exec')
+            exec_app_entry.set_text(exec_app)
+
+        icon = desktop_entry.get('Icon')
+        if icon:
+            icon_widget = self.application.builder.get_object('filechooserbutton_icon')
+            icon_widget.set_filename(icon)
+            
+        self._init_text_field(desktop_entry, 'Name', 'entry_name')
+        self._init_text_field(desktop_entry, 'Comment', 'entry_comment')
+        self._init_text_field(desktop_entry, 'Version', 'entry_version')
+        self._init_text_field(desktop_entry, 'GenericName', 'entry_generic_name')
+
+        self._init_boolean_field(desktop_entry, 'NoDisplay', 'switch_no_display')
+        self._init_boolean_field(desktop_entry, 'Terminal', 'switch_terminal')
+        self._init_boolean_field(desktop_entry, 'StartupNotify', 'switch_startup_notify')
+        self._init_boolean_field(desktop_entry, 'DBusActivatable', 'switch_dbus_activatable')
+            
 
     ###############
     # SIGNALS
