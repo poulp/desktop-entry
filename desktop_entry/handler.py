@@ -39,10 +39,9 @@ class Handler:
             widget = self.application.builder.get_object(widget_name)
             widget.set_text(value)
 
-
     def init_fields_from_file(self, filename):
         # Config file parser
-        config = configparser.ConfigParser()
+        config = configparser.RawConfigParser()
         config.read(filename)
             
         # Name
@@ -50,8 +49,7 @@ class Handler:
         if not desktop_entry:
             return
 
-        #exec_app = desktop_entry.get('Exec')
-        exec_app = None
+        exec_app = desktop_entry.get('Exec')
         if exec_app:
             exec_app_entry = self.application.builder.get_object('entry_exec')
             exec_app_entry.set_text(exec_app)
@@ -60,16 +58,27 @@ class Handler:
         if icon:
             icon_widget = self.application.builder.get_object('filechooserbutton_icon')
             icon_widget.set_filename(icon)
+
+        app_type = desktop_entry.get('Type')
+        if app_type:
+            app_type_widget = self.application.builder.get_object('combobox_application_type')
+            # TODO improve with using Liststore
+            app_type_map = {'Application': 0, 'Link': 1, 'Directory': 2}
+            app_type_widget.set_active(app_type_map[app_type])
             
         self._init_text_field(desktop_entry, 'Name', 'entry_name')
         self._init_text_field(desktop_entry, 'Comment', 'entry_comment')
         self._init_text_field(desktop_entry, 'Version', 'entry_version')
         self._init_text_field(desktop_entry, 'GenericName', 'entry_generic_name')
+        self._init_text_field(desktop_entry, 'StartupWMClass', 'entry_startup_wm_class')
+        self._init_text_field(desktop_entry, 'Path', 'entry_path')
+        self._init_text_field(desktop_entry, 'Categories', 'entry_categories')
 
         self._init_boolean_field(desktop_entry, 'NoDisplay', 'switch_no_display')
         self._init_boolean_field(desktop_entry, 'Terminal', 'switch_terminal')
         self._init_boolean_field(desktop_entry, 'StartupNotify', 'switch_startup_notify')
         self._init_boolean_field(desktop_entry, 'DBusActivatable', 'switch_dbus_activatable')
+        self._init_boolean_field(desktop_entry, 'Hidden', 'switch_hidden')
             
 
     ###############
@@ -85,11 +94,20 @@ class Handler:
              Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
         response = dialog.run()
         dialog.hide()
-        filename = dialog.get_filename()
-        if filename:
-            self.init_fields_from_file(filename) 
-            # Show window
-            self.application.activate_create_window(filename)
+        if response == Gtk.ResponseType.OK:
+            filename = dialog.get_filename()
+            if filename:
+                try:
+                    self.init_fields_from_file(filename) 
+                except configparser.Error as e:
+                    dialog = Gtk.MessageDialog(self.application.get_active_window(),
+                    0, Gtk.MessageType.ERROR,
+                    Gtk.ButtonsType.CLOSE, e)
+                    dialog.run()
+                    dialog.hide()
+                    return
+                # Show window
+                self.application.activate_create_window(filename)
 
     def on_form_submit(self, button):
         # Get name widget
@@ -97,7 +115,7 @@ class Handler:
         # Check if name is empty
         name = name_entry.get_text().strip()
         if not name:
-            dialog = Gtk.FileChooserDialog(self.application.get_active_window(),
+            dialog = Gtk.MessageDialog(self.application.get_active_window(),
             0, Gtk.MessageType.ERROR,
             Gtk.ButtonsType.CLOSE, "The field 'name' is required")
             dialog.run()
@@ -129,5 +147,10 @@ class Handler:
         self.application.quit()
 
     def on_form_cancel(self, button):
-        print('Bye !')
         self.application.quit()
+
+    def on_entry_categories_button_press_event(self, entry, event):
+        # TODO display a choice of categories
+        #response = self.application.dialog_list_categories.run()
+        #self.application.dialog_list_categories.hide()
+        pass
