@@ -1,9 +1,5 @@
 # coding: utf-8
 
-import sys
-import os
-import configparser
-
 import gi
 gi.require_version('Gtk', '3.0')
 gi.require_version('Gdk', '3.0')
@@ -11,21 +7,6 @@ gi.require_version('GdkPixbuf', '2.0')
 from gi.repository import Gio, GObject, Gtk
 
 from desktop_entry.handler import Handler
-
-
-def create_file(base_path, name, 
-        application_type, version, icon, exec_app):
-    path = base_path + name + '.desktop'
-    with open(path, 'w') as f:
-        f.write('[Desktop Entry]\n')
-        f.write('Name={}\n'.format(name))
-        f.write('Type={}\n'.format(application_type))
-        if version:
-            f.write('Version={}\n'.format(version))
-        if icon:
-            f.write('Icon={}\n'.format(icon))
-        if exec_app:
-            f.write('Exec={}\n'.format(exec_app))
 
 
 class DesktopEntryApp(Gtk.Application):
@@ -41,7 +22,6 @@ class DesktopEntryApp(Gtk.Application):
         self.dialog_list_categories.add_buttons(
             Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
             Gtk.STOCK_OK, Gtk.ResponseType.OK)
-
 
     def do_startup(self):
         Gtk.Application.do_startup(self)
@@ -70,4 +50,3 @@ class DesktopEntryApp(Gtk.Application):
 
     def on_quit(self, action, extra):
         self.quit()
-

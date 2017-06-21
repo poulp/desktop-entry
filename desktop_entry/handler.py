@@ -1,7 +1,5 @@
 # coding: utf-8
 
-import signal
-import sys
 import os
 import configparser
 
@@ -11,9 +9,21 @@ gi.require_version('Gdk', '3.0')
 gi.require_version('GdkPixbuf', '2.0')
 from gi.repository import Gio, GObject, Gtk
 
-
 DESKTOP_FILES_PATH = os.path.expanduser('~') + '/.local/share/applications/'
 
+def create_file(base_path, name,
+                application_type, version, icon, exec_app):
+    path = base_path + name + '.desktop'
+    with open(path, 'w') as f:
+        f.write('[Desktop Entry]\n')
+        f.write('Name={}\n'.format(name))
+        f.write('Type={}\n'.format(application_type))
+        if version:
+            f.write('Version={}\n'.format(version))
+        if icon:
+            f.write('Icon={}\n'.format(icon))
+        if exec_app:
+            f.write('Exec={}\n'.format(exec_app))
 
 class Handler:
 
@@ -79,7 +89,6 @@ class Handler:
         self._init_boolean_field(desktop_entry, 'StartupNotify', 'switch_startup_notify')
         self._init_boolean_field(desktop_entry, 'DBusActivatable', 'switch_dbus_activatable')
         self._init_boolean_field(desktop_entry, 'Hidden', 'switch_hidden')
-            
 
     ###############
     # SIGNALS
@@ -88,10 +97,13 @@ class Handler:
         self.application.activate_create_window()
 
     def on_edit_file(self, button):
-        dialog = Gtk.FileChooserDialog("Please choose a file", self.application.get_active_window(),
+        dialog = Gtk.FileChooserDialog(
+            "Please choose a file",
+            self.application.get_active_window(),
             Gtk.FileChooserAction.OPEN,
             (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-             Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+             Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
+        )
         response = dialog.run()
         dialog.hide()
         if response == Gtk.ResponseType.OK:
@@ -100,9 +112,13 @@ class Handler:
                 try:
                     self.init_fields_from_file(filename) 
                 except configparser.Error as e:
-                    dialog = Gtk.MessageDialog(self.application.get_active_window(),
-                    0, Gtk.MessageType.ERROR,
-                    Gtk.ButtonsType.CLOSE, e)
+                    dialog = Gtk.MessageDialog(
+                        self.application.get_active_window(),
+                        0,
+                        Gtk.MessageType.ERROR,
+                        Gtk.ButtonsType.CLOSE,
+                        e
+                    )
                     dialog.run()
                     dialog.hide()
                     return
@@ -115,9 +131,13 @@ class Handler:
         # Check if name is empty
         name = name_entry.get_text().strip()
         if not name:
-            dialog = Gtk.MessageDialog(self.application.get_active_window(),
-            0, Gtk.MessageType.ERROR,
-            Gtk.ButtonsType.CLOSE, "The field 'name' is required")
+            dialog = Gtk.MessageDialog(
+                self.application.get_active_window(),
+                0,
+                Gtk.MessageType.ERROR,
+                Gtk.ButtonsType.CLOSE,
+                "The field 'name' is required"
+            )
             dialog.run()
             dialog.hide()
             return
@@ -151,6 +171,6 @@ class Handler:
 
     def on_entry_categories_button_press_event(self, entry, event):
         # TODO display a choice of categories
-        #response = self.application.dialog_list_categories.run()
-        #self.application.dialog_list_categories.hide()
+        # response = self.application.dialog_list_categories.run()
+        # self.application.dialog_list_categories.hide()
         pass
